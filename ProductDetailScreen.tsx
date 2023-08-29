@@ -8,12 +8,15 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 
+// Тип параметров маршрута
 type RouteParams = {
   params: { productUrl: any };
   productUrl: string;
 };
 
+// Тип данных о продукте
 type ProductData = {
   category: string;
   description: string;
@@ -28,12 +31,17 @@ type ProductData = {
 };
 
 function ProductDetailScreen() {
+  // Получаем параметры маршрута и URL продукта
   const route = useRoute<RouteParams>();
   const { productUrl } = route.params;
 
+  // Состояние данных продукта
   const [productData, setProductData] = useState<null | ProductData>(null);
+
+  // Навигация
   const navigation = useNavigation();
 
+  // Загрузка данных при монтировании компонента
   useEffect(() => {
     const fetchDetails = async () => {
       try {
@@ -47,18 +55,35 @@ function ProductDetailScreen() {
 
     fetchDetails();
   }, []);
+
+  // Установка опций заголовка при монтировании компонента
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () => <Text>SomeText</Text>,
-      headerBackTitleVisible: false,
-      headerBackTitleStyle: { backgrounColor: " black " },
+      // Добавляем кликабельную иконку "Add To Favorite" в правую часть заголовка
+      headerRight: () => (
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => {
+            // Добавьте здесь логику для обработки клика по иконке "Add To Favorite"
+            console.log("Add To Favorite pressed");
+          }}
+        >
+          {/* Используем иконку "heart-outline" из библиотеки иконок Expo */}
+          <Ionicons name="heart-outline" size={24} color="black" />
+        </TouchableOpacity>
+      ),
+      headerBackTitleVisible: false, // Скрываем заголовок назад
+      headerBackTitleStyle: { backgroundColor: "black" },
     });
-  });
+  }, [navigation]);
+
+  // Отображение компонента
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
+      {/* Выводим информацию о продукте */}
       {productData && (
         <>
           <Image
@@ -105,6 +130,7 @@ function ProductDetailScreen() {
   );
 }
 
+// Стили компонента
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -133,11 +159,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     marginBottom: 10,
-    alignSelf: "flex-start", // Новое свойство
+    alignSelf: "flex-start",
   },
   categoryText: {
     color: "white",
-    fontSize: 20, // Увеличенный размер
+    fontSize: 20,
   },
   ratingContainer: {
     flexDirection: "row",
@@ -186,6 +212,9 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  headerButton: {
+    marginRight: 15,
   },
 });
 

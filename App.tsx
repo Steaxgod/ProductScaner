@@ -6,7 +6,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { BarCodeScannerScreen } from "./BarCodeScannerScreen";
 import ProductDetailScreen from "./ProductDetailScreen";
 import ProgNav from "./Navigation";
-
+import FavoritesScreen from "./FavoritesScreen";
 import {
   DrawerActions,
   NavigationContainer,
@@ -27,14 +27,6 @@ function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text>Home Screen</Text>
-    </View>
-  );
-}
-
-function FavoritesScreen() {
-  return (
-    <View style={styles.container}>
-      <Text>Favorites Screen</Text>
     </View>
   );
 }
