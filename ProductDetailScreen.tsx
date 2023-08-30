@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useContext, useEffect, useState, useLayoutEffect } from "react";
 import {
   View,
   Text,
@@ -9,14 +9,13 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { FavoritesContext, FavoritesContextType } from "./FavoritesContext";
 
-// Тип параметров маршрута
 type RouteParams = {
-  params: { productUrl: any };
+  params: { productUrl: string };
   productUrl: string;
 };
 
-// Тип данных о продукте
 type ProductData = {
   category: string;
   description: string;
@@ -31,17 +30,40 @@ type ProductData = {
 };
 
 function ProductDetailScreen() {
-  // Получаем параметры маршрута и URL продукта
   const route = useRoute<RouteParams>();
   const { productUrl } = route.params;
-
-  // Состояние данных продукта
   const [productData, setProductData] = useState<null | ProductData>(null);
-
-  // Навигация
   const navigation = useNavigation();
 
-  // Загрузка данных при монтировании компонента
+  const favoritesContext = useContext(FavoritesContext);
+
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  const toggleFavorite = () => {
+    console.log("Toggle function called");
+
+    if (favoritesContext && productData) {
+      console.log(
+        "Inside toggle function, favoritesContext and productData exist"
+      );
+
+      const productId = productData.id;
+
+      if (isFavorite) {
+        console.log("Removing from favorites");
+        favoritesContext.removeFromFavorites(productId);
+      } else {
+        console.log("Adding to favorites");
+        favoritesContext.addToFavorites({
+          id: productId,
+          title: productData.title,
+        });
+      }
+
+      setIsFavorite((prevIsFavorite) => !prevIsFavorite); // Используем функцию обратного вызова
+    }
+  };
+
   useEffect(() => {
     const fetchDetails = async () => {
       try {
@@ -54,36 +76,42 @@ function ProductDetailScreen() {
     };
 
     fetchDetails();
-  }, []);
+  }, [productUrl]);
 
-  // Установка опций заголовка при монтировании компонента
+  useEffect(() => {
+    if (productData) {
+      const existingFavorite = favoritesContext?.favorites.some(
+        (favorite) => favorite.id === productData.id
+      );
+      setIsFavorite(!!existingFavorite);
+    }
+  }, [favoritesContext, productData]);
+
   useLayoutEffect(() => {
     navigation.setOptions({
-      // Добавляем кликабельную иконку "Add To Favorite" в правую часть заголовка
       headerRight: () => (
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => {
-            // Добавьте здесь логику для обработки клика по иконке "Add To Favorite"
-            console.log("Add To Favorite pressed");
-          }}
-        >
-          {/* Используем иконку "heart-outline" из библиотеки иконок Expo */}
-          <Ionicons name="heart-outline" size={24} color="black" />
+        <TouchableOpacity style={styles.headerButton} onPress={toggleFavorite}>
+          <Ionicons
+            name={isFavorite ? "heart" : "heart-outline"}
+            size={24}
+            color={isFavorite ? "red" : "black"}
+          />
         </TouchableOpacity>
       ),
-      headerBackTitleVisible: false, // Скрываем заголовок назад
+      headerBackTitleVisible: false,
       headerBackTitleStyle: { backgroundColor: "black" },
     });
-  }, [navigation]);
+  }, [navigation, isFavorite]);
 
-  // Отображение компонента
+  useEffect(() => {
+    console.log("Favorites Context:", favoritesContext);
+  }, [favoritesContext]);
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
-      {/* Выводим информацию о продукте */}
       {productData && (
         <>
           <Image
@@ -130,7 +158,6 @@ function ProductDetailScreen() {
   );
 }
 
-// Стили компонента
 const styles = StyleSheet.create({
   container: {
     flex: 1,

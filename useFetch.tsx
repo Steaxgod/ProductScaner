@@ -3,7 +3,14 @@ import React, { useEffect, useState } from "react";
 
 const baseURL = "http://localhost:3000/";
 
-const useFetch = (url) => {
+type ProductDetail = {
+  // Здесь определите поля для типа ProductDetail
+  id: number;
+  title: string;
+  // и другие поля
+};
+
+const useFetch = (url: string) => {
   const [data, setData] = useState<ProductDetail | undefined>(undefined);
 
   const [loading, setLoading] = useState(true);
@@ -11,7 +18,7 @@ const useFetch = (url) => {
   useEffect(() => {
     const getData = async () => {
       try {
-        const response = await axios.get(`${baseURL}${url}`);
+        const response = await axios.get<ProductDetail>(`${baseURL}${url}`);
         setData(response.data);
       } catch (error) {
         console.log("An error occurred:", error);
