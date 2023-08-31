@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Button, Linking } from "react-native";
 import { BarCodeScanner } from "expo-barcode-scanner";
 import { useNavigation } from "@react-navigation/native";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export function BarCodeScannerScreen() {
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false); // Изменено на false
@@ -19,11 +19,20 @@ export function BarCodeScannerScreen() {
 
   const navigation = useNavigation();
 
+  useEffect(() => {
+    const transfer = async (url: string) => {
+      navigation.navigate("ProductDetailScreen", { productUrl: url });
+    };
+    transfer(
+      "https://rn-products-1d8a6-default-rtdb.firebaseio.com/products/1.json"
+    );
+  }, []);
+
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
     setScannedData(data);
     alert(`Bar code with type ${type} and data ${data} has been scanned!`);
-    navigation.navigate("ProductDetailScreen", { productUrl: data }); // Изменено на передачу data
+    // navigation.navigate("ProductDetailScreen", { productUrl: data }); // Изменено на передачу data
   };
 
   const openScannedLink = () => {

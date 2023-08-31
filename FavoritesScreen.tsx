@@ -1,21 +1,17 @@
 import React, { useContext } from "react";
 import { View, Text, FlatList, StyleSheet } from "react-native";
-import { FavoritesContext } from "./FavoritesContext";
+import AsyncStorage, {
+  useAsyncStorage,
+} from "@react-native-async-storage/async-storage";
 
 function FavoritesScreen() {
-  const context = useContext(FavoritesContext);
-
-  if (!context) {
-    return null; // Можете вернуть пустой экран или ошибку
-  }
-
-  const { favorites, removeFromFavorites } = context;
+  const { getItem, setItem } = useAsyncStorage("@fav");
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Favorites Screen</Text>
       <FlatList
-        data={favorites}
+        data={[]}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View style={styles.productItem}>
@@ -24,7 +20,6 @@ function FavoritesScreen() {
               style={styles.removeButton}
               onPress={() => {
                 console.log("Pressed remove for item:", item);
-                removeFromFavorites(item.id);
               }}
             >
               Remove

@@ -9,7 +9,9 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { FavoritesContext, FavoritesContextType } from "./FavoritesContext";
+import AsyncStorage, {
+  useAsyncStorage,
+} from "@react-native-async-storage/async-storage";
 
 type RouteParams = {
   params: { productUrl: string };
@@ -32,36 +34,23 @@ type ProductData = {
 function ProductDetailScreen() {
   const route = useRoute<RouteParams>();
   const { productUrl } = route.params;
-  const [productData, setProductData] = useState<null | ProductData>(null);
+  const [productData, setProductData] = useState<ProductData>();
   const navigation = useNavigation();
 
-  const favoritesContext = useContext(FavoritesContext);
+  const { getItem, setItem } = useAsyncStorage("@fav");
 
   const [isFavorite, setIsFavorite] = useState(false);
 
+  const writeItemToStorage = async (FavVal: ProductData | undefined) => {
+    if (!FavVal) {
+      return;
+    }
+
+    const jsonFavVal = JSON.stringify(FavVal);
+    await setItem(jsonFavVal);
+  };
   const toggleFavorite = () => {
     console.log("Toggle function called");
-
-    if (favoritesContext && productData) {
-      console.log(
-        "Inside toggle function, favoritesContext and productData exist"
-      );
-
-      const productId = productData.id;
-
-      if (isFavorite) {
-        console.log("Removing from favorites");
-        favoritesContext.removeFromFavorites(productId);
-      } else {
-        console.log("Adding to favorites");
-        favoritesContext.addToFavorites({
-          id: productId,
-          title: productData.title,
-        });
-      }
-
-      setIsFavorite((prevIsFavorite) => !prevIsFavorite); // Используем функцию обратного вызова
-    }
   };
 
   useEffect(() => {
@@ -78,19 +67,15 @@ function ProductDetailScreen() {
     fetchDetails();
   }, [productUrl]);
 
-  useEffect(() => {
-    if (productData) {
-      const existingFavorite = favoritesContext?.favorites.some(
-        (favorite) => favorite.id === productData.id
-      );
-      setIsFavorite(!!existingFavorite);
-    }
-  }, [favoritesContext, productData]);
-
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity style={styles.headerButton} onPress={toggleFavorite}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => {
+            writeItemToStorage(productData);
+          }}
+        >
           <Ionicons
             name={isFavorite ? "heart" : "heart-outline"}
             size={24}
@@ -102,10 +87,6 @@ function ProductDetailScreen() {
       headerBackTitleStyle: { backgroundColor: "black" },
     });
   }, [navigation, isFavorite]);
-
-  useEffect(() => {
-    console.log("Favorites Context:", favoritesContext);
-  }, [favoritesContext]);
 
   return (
     <ScrollView
