@@ -1,17 +1,17 @@
-import React, { useContext, useEffect, useState, useLayoutEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
+  ActivityIndicator,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage, {
-  useAsyncStorage,
-} from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native"; // Добавляем импорт useNavigation
 
 type RouteParams = {
   params: { productUrl: string };
@@ -31,27 +31,11 @@ type ProductData = {
   title: string;
 };
 
-function ProductDetailScreen() {
+const ProductDetailScreen = () => {
   const route = useRoute<RouteParams>();
   const { productUrl } = route.params;
-  const [productData, setProductData] = useState<ProductData>();
-  const navigation = useNavigation();
-
-  const { getItem, setItem } = useAsyncStorage("@fav");
-
+  const [productData, setProductData] = useState<ProductData>(null);
   const [isFavorite, setIsFavorite] = useState(false);
-
-  const writeItemToStorage = async (FavVal: ProductData | undefined) => {
-    if (!FavVal) {
-      return;
-    }
-
-    const jsonFavVal = JSON.stringify(FavVal);
-    await setItem(jsonFavVal);
-  };
-  const toggleFavorite = () => {
-    console.log("Toggle function called");
-  };
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -67,26 +51,55 @@ function ProductDetailScreen() {
     fetchDetails();
   }, [productUrl]);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => {
-            writeItemToStorage(productData);
-          }}
-        >
-          <Ionicons
-            name={isFavorite ? "heart" : "heart-outline"}
-            size={24}
-            color={isFavorite ? "red" : "black"}
-          />
-        </TouchableOpacity>
-      ),
-      headerBackTitleVisible: false,
-      headerBackTitleStyle: { backgroundColor: "black" },
-    });
-  }, [navigation, isFavorite]);
+  useEffect(() => {
+    const checkFavorite = async () => {
+      try {
+        const isFavoriteStr = await AsyncStorage.getItem(productUrl);
+        const isFav = isFavoriteStr === "true";
+        setIsFavorite(isFav);
+      } catch (error) {
+        console.error("Error checking favorite:", error);
+      }
+    };
+
+    checkFavorite();
+  }, [productUrl]);
+
+  const toggleFavorite = async () => {
+    try {
+      if (isFavorite) {
+        await AsyncStorage.removeItem(productUrl);
+        setIsFavorite(false);
+      } else {
+        await AsyncStorage.setItem(productUrl, "true");
+        setIsFavorite(true);
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    }
+  };
+
+  const navigation = useNavigation();
+
+  navigation.setOptions({
+    headerRight: () => (
+      <TouchableOpacity style={styles.favoriteButton} onPress={toggleFavorite}>
+        <Ionicons
+          name={isFavorite ? "heart" : "heart-outline"}
+          size={24}
+          color={isFavorite ? "red" : "black"}
+        />
+      </TouchableOpacity>
+    ),
+  });
+
+  if (!productData) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -137,8 +150,7 @@ function ProductDetailScreen() {
       )}
     </ScrollView>
   );
-}
-
+};
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -221,8 +233,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  headerButton: {
+  favoriteButton: {
     marginRight: 15,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 
